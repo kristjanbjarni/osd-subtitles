@@ -2,11 +2,12 @@
 
 ![Screenshot](docs/osd-subtitles.jpg)
 
-This utility combines OpenTX telemetry log files with [Betaflight] OSD elements and produces a subtitle file with OSD overlay similiar to the the Betaflight OSD. You can then play your flight video with subtitle OSD elements in a video player like [VLC] or import them into Youtube or some other web player. Not all OSD elements are currently supported and some may display differently from Betaflight.
+The `OSD Subtitles` utility combines OpenTX telemetry log files with [Betaflight] OSD elements and produces a subtitle file with OSD overlay similiar to the the Betaflight OSD. You can then play your flight video with subtitle OSD elements in a video player like [VLC] or import them into Youtube or some other web player. Not all OSD elements are currently supported and some may display differently from Betaflight. 
 
-## Click on [osd-subtitles] to start using the utility.
+## Click on [osd-subtitles] to open the utility in the browser.
 
-Read the [how to] on how to use this.
+## Documentation
+Read the [how to] for more information.
 
 [osd-subtitles]: https://kristjanbjarni.github.io/osd-subtitles/
 [Betaflight]: https://betaflight.com/
