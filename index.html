@@ -8,8 +8,9 @@ https://github.com/kristjanbjarni/osd-subtitles/
 
 <head>
 	<meta charset="UTF-8">
-        <meta name="title" content="OSD Subtitles">
-        <meta name="description" content="Utility to combine OpenTX telemetry log files with Betaflight OSD to produce subtitle files">
+	<meta name="title" content="OSD Subtitles">
+	<meta name="description"
+		content="Utility to combine OpenTX telemetry log files with Betaflight OSD to produce subtitle files">
 	<link rel="icon" href="favicon.png">
 	<title>OSD Subtitles</title>
 	<style>
@@ -83,6 +84,9 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		const METRIC = "METRIC";
 		const IMPERIAL = "IMPERIAL";
 		const UK = "UK";
+		const DEFAULT_FONT = "Arial";
+		const DEFAULT_FONTSIZE = 46;
+
 
 		function exportFile(data, mime_type, filename) {
 			let link = document.createElement("a");
@@ -336,26 +340,35 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		OSD_Elements = { //ctx = {logname,format,log,flight,osd,element}
-			"altitude": { name: "Altitude", short: "Alt", log_names: ["GAlt(m)", "Alt(m)"], format: AltFormat },
-			"avg_cell_voltage": { name: "Battery average cell voltage", short: "BattAvg", unit: ["V"], symbol: "\u{1F50B}", log_names: ["Batt(V)", "RxBt(V)"], format: AvgCellFormat },
-			"current": { name: "Battery current draw", short: "Curr", symbol: "", unit: ["A"], log_names: ["Curr(A)"], format: DefFormat },
-			"mah_drawn": { name: "Battery current mAh drawn", short: "CurrDrawn", symbol: "", unit: [" mA/h"], log_names: ["Capa(mAh)"], format: DefFormat },
-			"osd_vbat": { name: "Battery voltage", short: "Batt", unit: ["V"], symbol: "\u{1F50B}", log_names: ["VFAS(v)", "RxBt(V)"], format: DefFormat },
-			"craft_name": { name: "Craft name", short: "Craft", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.craft_name, ctx) } },
-			"crosshair": { name: "Crosshairs", symbol: "\u{271B}", format: function (v, ctx) { return DefFormat("", ctx) } },
+			"altitude": { item: 15, name: "Altitude", short: "Alt", log_names: ["GAlt(m)", "Alt(m)"], format: AltFormat },
+			"avg_cell_voltage": { item: 32, name: "Battery average cell voltage", short: "BattAvg", unit: ["V"], symbol: "\u{1F50B}", log_names: ["Batt(V)", "RxBt(V)"], format: AvgCellFormat },
+			"current": { item: 11, name: "Battery current draw", short: "Curr", symbol: "", unit: ["A"], log_names: ["Curr(A)"], format: DefFormat },
+			"mah_drawn": { item: 12, name: "Battery current mAh drawn", short: "CurrDrawn", symbol: "", unit: [" mA/h"], log_names: ["Capa(mAh)"], format: DefFormat },
+			"osd_vbat": { item: 1, name: "Battery voltage", short: "Batt", unit: ["V"], symbol: "\u{1F50B}", log_names: ["VFAS(v)", "RxBt(V)"], format: DefFormat },
+			"craft_name": { item: 8, name: "Craft name", short: "Craft", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.craft_name, ctx) } },
+			"crosshair": { item: 2, name: "Crosshairs", symbol: "\u{271B}", format: function (v, ctx) { return DefFormat("", ctx) } },
 			"display_name": { name: "Display name", short: "Name", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.display_name, ctx) } },
-			"flight_dist": { name: "Flight distance", short: "FltDist", symbol: "\u{21BB}", log_names: ["$TRAVEL"], format: DistFormat },
-			"gps_lat": { name: "Gps Latitude", short: "Lat", log_names: ["GPS"], format: GPSLat },
-			"gps_lon": { name: "Gps Longitute", short: "Lon", log_names: ["GPS"], format: GPSLon },
-			"gps_sats": { name: "Gps Sats", short: "Sats", symbol: "\u{1F6F0}", log_names: ["Sats"], format: DefFormat },
-			"gps_speed": { name: "Gps speed", short: "Speed", unit: [" km/h", " mph", " mph"], symbol: "\u{238B}", log_names: ["GSpd(kmh)"], format: GPSSpeedFormat },
-			"home_dir": { name: "Home direction", short: "HomeDir", log_names: ["$DIRECTION"], symbols: ["\u{2B61}", "\u{2B67}", "\u{2B62}", "\u{2B68}", "\u{2B63}", "\u{2B69}", "\u{2B60}", "\u{2B66}"], format: DirectionFormat },
-			"home_dist": { name: "Home distance", short: "HomeDist", symbol: "\u{1F3E0}", log_names: ["$DISTANCE"], format: DistFormat },
-			"rssi": { name: "Rssi Value", short: "RSSI", unit: ["%"], symbol: "\u{1F4F6}", log_names: ["RSSI(%)", "TQly(%)"], format: RSSIFormat },
-			"throttle": { name: "Throttle position", short: "Thr", symbol: "\u{23E6}", log_names: ["Thr"], format: ThrottleFormat },
-			"rtc_date_time": { name: "RTC date and time", short: "Time", symbol: "", format: DateTimeFormat },
-			"tim_1": { name: "Timer 1", short: "Fly/mn", symbol: "\u{23F1}", format: TimerFormat },
+			"flight_dist": { item: 40, name: "Flight distance", short: "FltDist", symbol: "\u{21BB}", log_names: ["$TRAVEL"], format: DistFormat },
+			"gps_lat": { item: 21, name: "Gps Latitude", short: "Lat", log_names: ["GPS"], format: GPSLat },
+			"gps_lon": { item: 20, name: "Gps Longitute", short: "Lon", log_names: ["GPS"], format: GPSLon },
+			"gps_sats": { item: 14, name: "Gps Sats", short: "Sats", symbol: "\u{1F6F0}", log_names: ["Sats"], format: DefFormat },
+			"gps_speed": { item: 13, name: "Gps speed", short: "Speed", unit: [" km/h", " mph", " mph"], symbol: "\u{238B}", log_names: ["GSpd(kmh)"], format: GPSSpeedFormat },
+			"home_dir": { item: 22, name: "Home direction", short: "HomeDir", log_names: ["$DIRECTION"], symbols: ["\u{2B61}", "\u{2B67}", "\u{2B62}", "\u{2B68}", "\u{2B63}", "\u{2B69}", "\u{2B60}", "\u{2B66}"], format: DirectionFormat },
+			"home_dist": { item: 23, name: "Home distance", short: "HomeDist", symbol: "\u{1F3E0}", log_names: ["$DISTANCE"], format: DistFormat },
+			"rssi": { item: 0, name: "Rssi Value", short: "RSSI", unit: ["%"], symbol: "\u{1F4F6}", log_names: ["RSSI(%)", "TQly(%)"], format: RSSIFormat },
+			"throttle": { item: 9, name: "Throttle position", short: "Thr", symbol: "\u{23E6}", log_names: ["Thr"], format: ThrottleFormat },
+			"rtc_date_time": { item: 29, name: "RTC date and time", short: "Time", symbol: "", format: DateTimeFormat },
+			"tim_1": { item: 28, name: "Timer 1", short: "Fly/mn", symbol: "\u{23F1}", format: TimerFormat },
 			"tim_2": { name: "Timer 2", short: "Fly/mn", symbol: "\u{23F1}", format: TimerFormat }
+		}
+
+		function getOSDElementKeyByiNavItem(item) {
+			for (let [key, e] of Object.entries(OSD_Elements)) {
+				if (e.item == item) {
+					return key;
+				}
+			}
+			return null;
 		}
 
 		class OSD_Element {
@@ -415,10 +428,36 @@ https://github.com/kristjanbjarni/osd-subtitles/
 							this.units = value;
 						}
 					}
+					//iNav support
+					else if (lines[i].startsWith("osd_layout ")) {
+						let s = lines[i].substring(11);
+						let t = s.split(" ");
+						//Format: layout item col row visible
+						//Ex: osd_layout 0 38 1 13 V
+						let profile = parseInt(t[0]);
+						let item = parseInt(t[1]);
+						let x = parseInt(t[2]);
+						let y = parseInt(t[3]);
+						let visible = (t[4] == "V");
+						let key = getOSDElementKeyByiNavItem(item);
+						if (key && profile < 3) {
+							let e = this.elements[key];
+							if (profile == 0) {
+								e.x = Math.round(x / 0.30);
+								e.y = Math.round(y / 0.16);
+							}
+							e.profile[profile] = visible;
+							if (key == "crosshair") {
+								e.x = 50;
+								e.y = 50;
+							}
+						}
+					}
 				}
 				return line_count;
 			}
 		}
+
 
 		class OpenTXLog {
 			flights;
@@ -665,10 +704,14 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		class SubtitlesSSA extends SubtitlesSRT {
+			font = DEFAULT_FONT;
+			fontsize = DEFAULT_FONTSIZE;
 
-			constructor(osd_profile, delay, trim_start, trim_end, osd, flight) {
+			constructor(osd_profile, delay, trim_start, trim_end, osd, flight, font, fontsize) {
 				super(osd_profile, delay, trim_start, trim_end, osd, flight);
 				this.format = "ssa";
+				this.font = font;
+				this.fontsize = fontsize;
 			}
 
 			addFileHeader(result) {
@@ -683,7 +726,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				result.push("Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, TertiaryColour, BackColour, Bold, Italic, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, AlphaLevel, Encoding");
 				for (let [key, element] of Object.entries(osd.elements)) {
 					if (element.profile[this.profile]) {
-						result.push("Style: " + key + ",Arial,46,16777215,16777215,255,0,0,0,1,2,2,5," + (element.x * 10) + ",0," + (element.y * 10) + ",0,0");
+						result.push("Style: " + key + "," + this.font + "," + this.fontsize + ",16777215,16777215,255,0,0,0,1,2,2,5," + (element.x * 10) + ",0," + (element.y * 10) + ",0,0");
 					}
 				}
 				result.push("");
@@ -813,11 +856,15 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				let edelay = document.getElementById('delay');
 				let etrimstart = document.getElementById('trim_start');
 				let etrimend = document.getElementById('trim_end');
+				let efont = document.getElementById('font');
+				let efontsize = document.getElementById('fontsize');
 				let delay = (edelay.value == "") ? 0 : parseInt(edelay.value);
 				let trim_start = (etrimstart.value == "") ? 0 : parseInt(etrimstart.value);
 				let trim_end = (etrimend.value == "") ? 0 : parseInt(etrimend.value);
 				let format = eformat.options[eformat.selectedIndex].value;
 				let flight_index = flight_options.selectedIndex;
+				let font = (efont.value == "" ? DEFAULT_FONT : efont.value);
+				let fontsize = (efontsize.value == "" ? DEFAULT_FONTSIZE : parseInt(efontsize.value));
 				let eosd = document.getElementById('osd_profile');
 				let osd_profile = eosd.options[eosd.selectedIndex].value;
 				let subitles;
@@ -825,7 +872,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					subtitles = new SubtitlesSRT(osd_profile, delay, trim_start, trim_end, osd, log.flights[flight_index]);
 				}
 				else if (format == "ssa") {
-					subtitles = new SubtitlesSSA(osd_profile, delay, trim_start, trim_end, osd, log.flights[flight_index]);
+					subtitles = new SubtitlesSSA(osd_profile, delay, trim_start, trim_end, osd, log.flights[flight_index], font, fontsize);
 				}
 				else {
 					let youtube = (format == "vtt_youtube");
@@ -874,6 +921,21 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			}
 		}
 
+		function setDisplay(e, show) {
+			let block = (e.tagName == "TR" ? "table-row" : "block");
+			e.style.display = (show ? block : "none");
+		}
+
+		function formatChanged() {
+			let eformat = document.getElementById("subtitle_format");
+			let font_row = document.getElementById("font_row");
+			let fontsize_row = document.getElementById("fontsize_row");
+			let f = eformat.options[eformat.selectedIndex].value;
+			let show = (f == "ssa");
+			setDisplay(font_row, show);
+			setDisplay(fontsize_row, show);
+		}
+
 		function init() {
 			let f = document.getElementById("form");
 			let e = document.getElementById("osd_elements");
@@ -889,8 +951,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					"<td><input type='checkbox' id='" + key + "_0' value='true'></input></td>" +
 					"<td><input type='checkbox' id='" + key + "_1' value='true'></input></td>" +
 					"<td><input type='checkbox' id='" + key + "_2' value='true'></input></td>" +
-					"<td><input size='5' id='" + key + "_x' value='" + value.x + "'></input></td>" +
-					"<td><input size='5' id='" + key + "_y' value='" + value.y + "'></input></td>" +
+					"<td><input type='text' size='5' id='" + key + "_x' value='" + value.x + "'></input></td>" +
+					"<td><input type='text' size='5' id='" + key + "_y' value='" + value.y + "'></input></td>" +
 					"</tr>";
 				e.innerHTML += s;
 			}
@@ -903,7 +965,9 @@ https://github.com/kristjanbjarni/osd-subtitles/
 	<p>
 		OSD subtitles combines OpenTX telemetry logs with Betaflight OSD elements and produces a subtitle file with OSD
 		overlay similiar to the the Betaflight OSD.<br />
-		Read the <a target="_blank" href="docs/howto.html">How to</a> on what are the requirements and how to use this in practice and check out the <a target="_blank" href="https://github.com/kristjanbjarni/osd-subtitles/">main GitHub project</a>.
+		Read the <a target="_blank" href="docs/howto.html">How to</a> on what are the requirements and how to use this
+		in practice and check out the <a target="_blank" href="https://github.com/kristjanbjarni/osd-subtitles/">main
+			GitHub project</a>.
 	</p>
 	<form id="form">
 		<input id="log_file" class="file" type="file" accept=".csv" onchange="loadLog(this.files[0])">
@@ -1049,12 +1113,35 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								<label for="subtitle_format">Subtitle format:</label>
 							</td>
 							<td>
-								<select id="subtitle_format">
+								<select id="subtitle_format" onchange="formatChanged()">
 									<option value="srt">SubRip Text (SRT)</option>
 									<option value="ssa">SubStation Alpha (SSA)</option>
 									<option value="vtt">WebVTT</option>
 									<option value="vtt_youtube">WebVTT (YouTube)</option>
 								</select>
+							</td>
+						</tr>
+						<tr id="font_row" style="display: none">
+							<td>
+								<label for="font">Font:</label>
+							</td>
+							<td>
+								<input type="text" id="font" list="fonts" size="20" value="Arial" autocomplete="off">
+								<datalist id="fonts">
+									<option>Arial</option>
+									<option>Arial Black</option>
+									<option>Tahoma</option>
+									<option>Times New Roman</option>
+									<option>Verdana</option>
+								</datalist>
+							</td>
+						</tr>
+						<tr id="fontsize_row" style="display: none">
+							<td>
+								<label for="fontsize">Font size:</label>
+							</td>
+							<td>
+								<input type="number" min="1" id="fontsize" size="6" value="46"> (px)
 							</td>
 						</tr>
 					</tbody>
