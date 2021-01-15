@@ -16,6 +16,7 @@ Next you can select the [CLI](https://oscarliang.com/betaflight-cli-explained/) 
 ## OSD elements
 Here you can change the profile used and positioning of the OSD elements. The X and Y values are in percentage of the video screen. So for example `x=0%, y=0%` would be in the upper left corner, `x=50%, y=%50` would be in the middle of the screen and `x=100%, y=100%` would be in the lower right corner of the video. Note that for some players there are extra margins for all subtitles so the subtitles start from the margin instead of the whole screen so that means the position doesn't always map correctly to screen size.
 
+## Settings
 Select what OSD profile index you want to use for the subtitles. Select the battery cell count of the craft if you display the average battery voltage or you can use `Auto` which will try to guess the cell count, but this sometimes does not work correctly if the starting voltage in the log is less than maximum cell voltage, in that case select the correct number of cells. If you want to display `Craft name` and `Display name` you can input those in the corresponding fields.
 
 The trim start field can be used to trim the start of the log. For example if you have the video start at 30 seconds already into the flight, you would input 30000 in the trim start field to cut out 30 seconds from the start and the corresponding telemetry information.
