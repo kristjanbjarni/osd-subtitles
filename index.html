@@ -565,8 +565,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			flight;
 			format;
 
-			constructor(osd_profile, delay, trim_start, trim_end, osd, flight) {
-				this.osd_profile = osd_profile;
+			constructor(profile, delay, trim_start, trim_end, osd, flight) {
+				this.profile = profile;
 				this.delay = delay;
 				this.trim_start = trim_start;
 				this.trim_end = trim_end;
@@ -670,8 +670,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		class SubtitlesVTT extends SubtitlesSRT {
 			youtube = false;
 
-			constructor(osd_profile, delay, trim_start, trim_end, osd, flight, youtube) {
-				super(osd_profile, delay, trim_start, trim_end, osd, flight);
+			constructor(profile, delay, trim_start, trim_end, osd, flight, youtube) {
+				super(profile, delay, trim_start, trim_end, osd, flight);
 				this.format = "vtt";
 				this.youtube = youtube;
 			}
@@ -707,8 +707,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			font = DEFAULT_FONT;
 			fontsize = DEFAULT_FONTSIZE;
 
-			constructor(osd_profile, delay, trim_start, trim_end, osd, flight, font, fontsize) {
-				super(osd_profile, delay, trim_start, trim_end, osd, flight);
+			constructor(profile, delay, trim_start, trim_end, osd, flight, font, fontsize) {
+				super(profile, delay, trim_start, trim_end, osd, flight);
 				this.format = "ssa";
 				this.font = font;
 				this.fontsize = fontsize;
