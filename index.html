@@ -371,6 +371,41 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			return null;
 		}
 
+		class Queue {
+			size;
+			queue;
+
+			constructor(size) {
+				this.size = size;
+				this.queue = new Array();
+			}
+
+			push(item) {
+				if (this.queue.length >= this.size) {
+					this.queue.shift();
+				}
+				this.queue.push(item);
+			}
+
+			first() {
+				if (this.size > 0) {
+					return this.queue[0];
+				}
+				return null;
+			}
+
+			last() {
+				if (this.size > 0) {
+					return this.queue[this.queue.length - 1];
+				}
+				return null;
+			}
+
+			getAll() {
+				return this.queue;
+			}
+		}
+
 		class OSD_Element {
 			x = 50;
 			y = 50;
@@ -529,6 +564,12 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					let last_lat = null;
 					let last_lon = null;
 					let total_travel = 0;
+					let queue_size = Math.round((1000 / f.logs[0]["$INTERVAL"]) * 2); // 2 seconds queue for bearing
+					if (queue_size < 1) {
+						queue_size = 1;
+					}
+					let gps_queue = new Queue(queue_size)
+					console.log("queue_size:" + queue_size);
 					for (let j = 0; j < f.logs.length; j++) {
 						let gps = f.logs[j]["GPS"];
 						if (gps) {
@@ -540,15 +581,21 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								last_lat = lat;
 								last_lon = lon;
 							}
+							let gps_item = { lat: lat, lon: lon };
 							total_travel += GPS_Distance(last_lat, last_lon, lat, lon);
 							f.logs[j]["$TRAVEL"] = total_travel;
 							f.logs[j]["$DISTANCE"] = GPS_Distance(home_lat, home_lon, lat, lon);
-							let craft_direction = GPS_Bearing(last_lat, last_lon, lat, lon);
+							let gps_first = gps_queue.first();
+							if (gps_first == null) {
+								gps_first = gps_item;
+							}
+							let craft_direction = GPS_Bearing(gps_first.lat, gps_first.lon, lat, lon);
 							let home_direction = GPS_Bearing(lat, lon, home_lat, home_lon);
 							let osd_direction = (Math.round(home_direction - craft_direction) + 360) % 360;
 							f.logs[j]["$DIRECTION"] = osd_direction;
 							last_lat = lat;
 							last_lon = lon;
+							gps_queue.push(gps_item);
 						}
 					}
 				}
