@@ -564,7 +564,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					let last_lat = null;
 					let last_lon = null;
 					let total_travel = 0;
-					let queue_size = Math.round((1000 / f.logs[0]["$INTERVAL"]) * 2); // 2 seconds queue for bearing
+					let queue_size = Math.round((1000 / f.logs[0]["$INTERVAL"])); // 1 second GPS queue for bearing
 					if (queue_size < 1) {
 						queue_size = 1;
 					}
