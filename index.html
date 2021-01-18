@@ -23,6 +23,14 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			margin-bottom: 10px;
 		}
 
+		.small {
+			font-size: small;
+		}
+
+		.osd_name {
+			width: 150px;
+		}
+
 		.file {
 			display: none;
 		}
@@ -50,10 +58,18 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			border-bottom: 2px solid #009879;
 		}
 
+		h1 {
+			margin-bottom: 0px;
+		}
+
 		h2 {
 			font-size: 16px;
 			font-weight: bold;
 			margin-bottom: 0px;
+		}
+
+		th {
+			text-align: center;
 		}
 
 		.column {
@@ -155,7 +171,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			return rad * 180 / Math.PI;
 		}
 
-		function GPS_Distance(lat1, lon1, lat2, lon2) {
+		function GPS_Distance(lat1, lon1, lat2, lon2, alt1, alt2) {
 			lat1 = degToRad(lat1);
 			lat2 = degToRad(lat2);
 			let lat_dif = lat2 - lat1;
@@ -163,7 +179,14 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			let c = Math.pow((Math.sin(lon_dif / 2)), 2);
 			let b = Math.pow((Math.sin(lat_dif / 2)), 2);
 			let a = b + Math.cos(lat1) * Math.cos(lat2) * c;
-			return 2 * EARTH_RADIUS * Math.asin(Math.sqrt(a));
+			let d = 2 * EARTH_RADIUS * Math.asin(Math.sqrt(a));
+			if (alt1 && alt2) {
+				let h = Math.abs(alt2 - alt1);
+				if (h > 0) {
+					d = Math.sqrt(d * d + h * h);
+				}
+			}
+			return d;
 		}
 
 		function GPS_Bearing(lat1, lon1, lat2, lon2) {
@@ -176,6 +199,22 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			let b = Math.atan2(y, x);
 			b = radToDeg(b);
 			return (b + 360) % 360;
+		}
+
+		function getLogValue(key, log) {
+			let e = OSD_Elements[key];
+			for (let i = 0; i < e.log_names.length; i++) {
+				let logname = e.log_names[i];
+				let v = log[logname];
+				if (v != null) {
+					return v;
+				}
+			}
+			return null;
+		}
+
+		function isNumber(val) {
+			return typeof val === 'number';
 		}
 
 		function setOSDValue(value, e) {
@@ -314,11 +353,6 @@ https://github.com/kristjanbjarni/osd-subtitles/
 
 		function AltFormat(v, ctx) {
 			let result = DistFormat(v, ctx)
-			/*
-			if (ctx.format != "srt" && ctx.osd.alt_alarm > 0 && v >= 100) {
-				result = "<c.red>" + result + "</c>";
-			}
-			*/
 			return result;
 		}
 
@@ -401,10 +435,6 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				}
 				return null;
 			}
-
-			getAll() {
-				return this.queue;
-			}
 		}
 
 		class OSD_Element {
@@ -421,7 +451,6 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			craft_name = "";
 			display_name = "";
 			vbat_max_cell_voltage = 430;
-			alt_alarm = 100;
 			cells = 0;
 			units = METRIC;
 
@@ -450,9 +479,6 @@ https://github.com/kristjanbjarni/osd-subtitles/
 						}
 						else if (name == "vbat_max_cell_voltage") {
 							this.vbat_max_cell_voltage = value;
-						}
-						else if (name == "osd_alt_alarm") {
-							this.alt_alarm = value;
 						}
 						else if (name == "name") {
 							this.craft_name = value;
@@ -565,12 +591,12 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					let last_lat = null;
 					let last_lon = null;
 					let total_travel = 0;
+					let last_altitude = null;
 					let queue_size = Math.round((1000 / f.logs[0]["$INTERVAL"])); // 1 second GPS queue for bearing
 					if (queue_size < 1) {
 						queue_size = 1;
 					}
 					let gps_queue = new Queue(queue_size)
-					console.log("queue_size:" + queue_size);
 					for (let j = 0; j < f.logs.length; j++) {
 						let gps = f.logs[j]["GPS"];
 						if (gps) {
@@ -582,8 +608,15 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								last_lat = lat;
 								last_lon = lon;
 							}
+							let altitude = null;
+							if (j > 0) { //Skip first altitude value, it's usually wrong
+								getLogValue("altitude", f.logs[j]);
+							}
+							if (last_altitude == null) {
+								last_altitude = altitude;
+							}
 							let gps_item = { lat: lat, lon: lon };
-							total_travel += GPS_Distance(last_lat, last_lon, lat, lon);
+							total_travel += GPS_Distance(last_lat, last_lon, lat, lon, last_altitude, altitude);
 							f.logs[j]["$TRAVEL"] = total_travel;
 							f.logs[j]["$DISTANCE"] = GPS_Distance(home_lat, home_lon, lat, lon);
 							let gps_first = gps_queue.first();
@@ -596,6 +629,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 							f.logs[j]["$DIRECTION"] = osd_direction;
 							last_lat = lat;
 							last_lon = lon;
+							last_altitude = altitude;
 							gps_queue.push(gps_item);
 						}
 					}
@@ -995,12 +1029,12 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			for (let [key, ovalue] of Object.entries(OSD_Elements)) {
 				let value = osd.elements[key];
 				let s = "<tr>" +
-					"<td><label for='" + key + "_x'>" + ovalue.name + "</label></td>" +
+					"<td class='osd_name'><label for='" + key + "_x'>" + ovalue.name + "</label></td>" +
 					"<td><input type='checkbox' id='" + key + "_0' value='true'></input></td>" +
 					"<td><input type='checkbox' id='" + key + "_1' value='true'></input></td>" +
 					"<td><input type='checkbox' id='" + key + "_2' value='true'></input></td>" +
-					"<td><input type='text' size='5' id='" + key + "_x' value='" + value.x + "'></input></td>" +
-					"<td><input type='text' size='5' id='" + key + "_y' value='" + value.y + "'></input></td>" +
+					"<td><input type='text' size='4' id='" + key + "_x' value='" + value.x + "'></input></td>" +
+					"<td><input type='text' size='4' id='" + key + "_y' value='" + value.y + "'></input></td>" +
 					"</tr>";
 				e.innerHTML += s;
 			}
@@ -1010,12 +1044,10 @@ https://github.com/kristjanbjarni/osd-subtitles/
 
 <body onload="init()">
 	<h1>OSD Subtitles</h1>
-	<p>
+	<p class="small">
 		OSD subtitles combines OpenTX telemetry logs with Betaflight OSD elements and produces a subtitle file with OSD
-		overlay similiar to the the Betaflight OSD.<br />
-		Read the <a target="_blank" href="docs/howto.html">How to</a> on what are the requirements and how to use this
-		in practice and check out the <a target="_blank" href="https://github.com/kristjanbjarni/osd-subtitles/">main
-			GitHub project</a>.
+		overlay. Read the <a target="_blank" href="docs/howto.html">How to</a> and check out the <a target="_blank"
+			href="https://github.com/kristjanbjarni/osd-subtitles/"> GitHub project</a>.
 	</p>
 	<form id="form">
 		<input id="log_file" class="file" type="file" accept=".csv" onchange="loadLog(this.files[0])">
@@ -1201,7 +1233,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			</div>
 			<div id="subtitle_output" class="column">
 				<h2 id="subtitle_header">Subtitles:</h2>
-				<textarea id="subtitles_text" rows="35" readonly="readonly"></textarea>
+				<textarea id="subtitles_text" rows="36" readonly="readonly"></textarea>
 			</div>
 		</div>
 	</form>
