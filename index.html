@@ -15,12 +15,31 @@ https://github.com/kristjanbjarni/osd-subtitles/
 	<link rel="icon" href="favicon.png">
 	<title>OSD Subtitles</title>
 	<style>
+		#osd_image {
+			width: 640px;
+			height: 480px;
+			border: 1px solid #aaaaaa;
+			position: relative;
+			background-image: url("docs/osd.jpg");
+		}
+
+		.osd_drag {
+			text-shadow: 2px 2px 0px black;
+			color: white;
+			cursor: grab;
+			position: absolute;
+		}
+
 		#subtitles_text {
 			width: 100%;
 		}
 
 		#subtitle_header {
-			margin-bottom: 10px;
+			margin-bottom: 0px;
+		}
+
+		#fontsize {
+			width: 3em;
 		}
 
 		.small {
@@ -28,11 +47,16 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		.osd_name {
-			width: 150px;
+			width: 10em;
 		}
 
 		.file {
 			display: none;
+		}
+
+		#elements_table1 {
+			float: left;
+			margin-right: 10px;
 		}
 
 		table.cnf {
@@ -59,12 +83,15 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		h1 {
+			font-size: 20px;
+			margin-top: 0px;
 			margin-bottom: 0px;
 		}
 
 		h2 {
 			font-size: 16px;
 			font-weight: bold;
+			margin-top: 0px;
 			margin-bottom: 0px;
 		}
 
@@ -103,7 +130,34 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		const UK = "UK";
 		const DEFAULT_FONT = "Arial";
 		const DEFAULT_FONTSIZE = 46;
+		const OSD_IMAGE_WIDTH = 640;
+		const OSD_IMAGE_HEIGHT = 480;
 
+		function allowDrop(ev) {
+			ev.preventDefault();
+		}
+
+		function drag(ev) {
+			let data = { id: ev.target.id, x: ev.offsetX, y: ev.offsetY };
+			ev.dataTransfer.setData("application/json", JSON.stringify(data));
+		}
+
+		function drop(ev) {
+			ev.preventDefault();
+			let data = JSON.parse(ev.dataTransfer.getData("application/json"));
+			let e = document.getElementById(data.id);
+			let x = Math.max(ev.offsetX - data.x, 0);
+			let y = Math.max(ev.offsetY - data.y, 0);
+			let p = getPercentPosition(x, y);
+			let ip = getImagePosition(p.x, p.y);
+			e.style.left = ip.x + 'px'
+			e.style.top = ip.y + 'px'
+			let key = right(e.id, "_");
+			let ix = document.getElementById(key + '_x');
+			let iy = document.getElementById(key + '_y');
+			ix.value = p.x;
+			iy.value = p.y;
+		}
 
 		function exportFile(data, mime_type, filename) {
 			let link = document.createElement("a");
@@ -129,6 +183,22 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				str = str.substring(0, p);
 			}
 			return str;
+		}
+
+		function leftBack(str, sep) {
+			let p = str.lastIndexOf(sep);
+			if (p > -1) {
+				str = str.substring(0, p);
+			}
+			return str;
+		}
+
+		function toNumber(n, def) {
+			let r = parseInt(n);
+			if (isNaN(r)) {
+				r = def;
+			}
+			return r;
 		}
 
 		function right(str, sep) {
@@ -203,11 +273,13 @@ https://github.com/kristjanbjarni/osd-subtitles/
 
 		function getLogValue(key, log) {
 			let e = OSD_Elements[key];
-			for (let i = 0; i < e.log_names.length; i++) {
-				let logname = e.log_names[i];
-				let v = log[logname];
-				if (v != null) {
-					return v;
+			if (e.log_names != null) {
+				for (let i = 0; i < e.log_names.length; i++) {
+					let logname = e.log_names[i];
+					let v = log[logname];
+					if (v != null) {
+						return v;
+					}
 				}
 			}
 			return null;
@@ -843,53 +915,60 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		async function loadCLI(file) {
-			try {
-				let cli_filename = document.getElementById('cli_filename');
-				let content = await readTextFileAsync(file);
-				osd.load(content);
-				cli_filename.innerText = file.name;
-				updateUIFromOSD(osd);
-			}
-			catch (err) {
-				alert(err.message);
-				throw err;
+			if (file) {
+				try {
+
+					let cli_filename = document.getElementById('cli_filename');
+					let content = await readTextFileAsync(file);
+					osd.load(content);
+					cli_filename.innerText = file.name;
+					updateUIFromOSD(osd);
+				}
+				catch (err) {
+					alert(err.message);
+					throw err;
+				}
 			}
 		}
 
 		async function loadLog(file) {
-			try {
-				let btn1 = document.getElementById('btnGenerate');
-				let btn2 = document.getElementById('btnGenerateSave');
-				let efilename = document.getElementById('log_filename');
-				let content = await readTextFileAsync(file);
-				let flight_options = document.getElementById('flight');
-				for (let i = flight_options.options.length - 1; i >= 0; i--) {
-					flight_options.remove(i);
+			if (file) {
+				try {
+					let btn1 = document.getElementById('btnGenerate');
+					let btn2 = document.getElementById('btnGenerateSave');
+					let efilename = document.getElementById('log_filename');
+					let content = await readTextFileAsync(file);
+					let flight_options = document.getElementById('flight');
+					for (let i = flight_options.options.length - 1; i >= 0; i--) {
+						flight_options.remove(i);
+					}
+					log.load(content);
+					for (let i = 0; i < log.flights.length; i++) {
+						let name = log.flights[i].name;
+						let option = document.createElement("option");
+						option.text = name;
+						option.value = name;
+						flight_options.add(option);
+					}
+					efilename.innerText = file.name;
+					btn1.disabled = !log.isLoaded();
+					btn2.disabled = !log.isLoaded();
 				}
-				log.load(content);
-				for (let i = 0; i < log.flights.length; i++) {
-					let name = log.flights[i].name;
-					let option = document.createElement("option");
-					option.text = name;
-					option.value = name;
-					flight_options.add(option);
+				catch (err) {
+					alert(err.message);
+					throw err;
 				}
-				efilename.innerText = file.name;
-				btn1.disabled = !log.isLoaded();
-				btn2.disabled = !log.isLoaded();
-			}
-			catch (err) {
-				alert(err.message);
-				throw err;
 			}
 		}
 
 		function updateOSDFromUI(osd) {
 			for (let [key, value] of Object.entries(osd.elements)) {
-				let x = document.getElementById(key + '_x');
-				let y = document.getElementById(key + '_y');
-				value.x = x.value;
-				value.y = y.value;
+				let e = document.getElementById("osd_" + key);
+				let x = parseInt(e.style.left);
+				let y = parseInt(e.style.top);
+				let pos = getPercentPosition(x, y);
+				value.x = pos.x;
+				value.y = pos.y;
 				for (let i = 0; i < 3; i++) {
 					let p = document.getElementById(key + '_' + i);
 					value.profile[i] = p.checked;
@@ -906,16 +985,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		function updateUIFromOSD(osd, update_cells) {
-			for (let [key, value] of Object.entries(osd.elements)) {
-				let x = document.getElementById(key + '_x');
-				let y = document.getElementById(key + '_y');
-				x.value = value.x;
-				y.value = value.y;
-				for (let i = 0; i < 3; i++) {
-					let p = document.getElementById(key + '_' + i);
-					p.checked = value.profile[i];
-				}
-			}
+			let eprofile = document.getElementById('osd_profile');
+			let curr_profile = eprofile.options[eprofile.selectedIndex].value;
 			let c = document.getElementById('craft_name');
 			c.value = osd.craft_name;
 			c = document.getElementById('display_name');
@@ -926,6 +997,29 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			}
 			let u = document.getElementById('units');
 			u.value = osd.units;
+			for (let [key, value] of Object.entries(osd.elements)) {
+				for (let i = 0; i < 3; i++) {
+					let p = document.getElementById(key + '_' + i);
+					p.checked = value.profile[i];
+				}
+				let e = document.getElementById("osd_" + key);
+				let pos = getImagePosition(value.x, value.y);
+				e.style.left = pos.x + "px";
+				e.style.top = pos.y + "px";
+				setDisplay(e, value.profile[curr_profile]);
+				let ix = document.getElementById(key + '_x');
+				let iy = document.getElementById(key + '_y');
+				ix.value = value.x;
+				iy.value = value.y;
+				e.innerText = getDisplayValue(key);
+			}
+		}
+
+		function updateUIElements() {
+			for (let key of Object.keys(osd.elements)) {
+				let e = document.getElementById("osd_" + key);
+				e.innerText = getDisplayValue(key);
+			}
 		}
 
 		function generateSubtitles(save) {
@@ -991,15 +1085,17 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		async function loadConfig(file) {
-			try {
-				let content = await readTextFileAsync(file);
-				let data = JSON.parse(content);
-				Object.assign(osd, data);
-				updateUIFromOSD(osd, true);
-			}
-			catch (err) {
-				alert(err.message);
-				throw err;
+			if (file) {
+				try {
+					let content = await readTextFileAsync(file);
+					let data = JSON.parse(content);
+					Object.assign(osd, data);
+					updateUIFromOSD(osd, true);
+				}
+				catch (err) {
+					alert(err.message);
+					throw err;
+				}
 			}
 		}
 
@@ -1018,25 +1114,121 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			setDisplay(fontsize_row, show);
 		}
 
+		function updateOSDImage() {
+			let eprofile = document.getElementById('osd_profile');
+			let curr_profile = eprofile.options[eprofile.selectedIndex].value;
+			for (let key of Object.keys(osd.elements)) {
+				let e = document.getElementById("osd_" + key);
+				let p = document.getElementById(key + '_' + curr_profile);
+				setDisplay(e, p.checked);
+			}
+		}
+
+		function getImagePosition(xp, yp) {
+			let x = Math.trunc(OSD_IMAGE_WIDTH * xp / 100);
+			let y = Math.trunc(OSD_IMAGE_HEIGHT * yp / 100);
+			return { x: x, y: y };
+		}
+
+		function getPercentPosition(x, y) {
+			let xp = Math.trunc(x * 100 / OSD_IMAGE_WIDTH);
+			let yp = Math.trunc(y * 100 / OSD_IMAGE_HEIGHT);
+			return { x: xp, y: yp };
+		}
+
+		LOG_DISPLAY_EXAMPLE = {
+			"$MS": 0,
+			"$DISTANCE": 432,
+			"$DIRECTION": 135,
+			"$TRAVEL": 653,
+			"Date": "2017-11-11",
+			"Time": "16:20:00",
+			"Alt(m)": 399,
+			"Batt(V)": 3.98,
+			"Curr(A)": 42,
+			"Capa(mAh)": 690,
+			"VFAS(v)": 16.8,
+			"GPS": "00.000000 -00.000000",
+			"GSpd(kmh)": 40,
+			"Sats": 14,
+			"RSSI(%)": 99,
+			"Thr": 380
+		}
+
+		function getDisplayValue(key) {
+			let units = document.getElementById("units");
+			let osd = new OSD();
+			osd.craft_name = "CRAFT_NAME";
+			osd.display_name = "JOE PILOT";
+			osd.units = units.options[units.selectedIndex].value;
+			let flight = { logs: [LOG_DISPLAY_EXAMPLE] };
+			let element = OSD_Elements[key];
+			let ctx = { format: "ssa", log: LOG_DISPLAY_EXAMPLE, flight: flight, osd: osd, element: element };
+			let value = getLogValue(key, ctx.log);
+			let text = element.format(value, ctx);
+			if (!text) {
+				text = key;
+			}
+			return text;
+		}
+
+		function posChange(input) {
+			let key = leftBack(input.id, "_");
+			let value = toNumber(input.value, 0);
+			let e = document.getElementById("osd_" + key);
+			let p = getImagePosition(value, value);
+			if (input.id.endsWith("x")) {
+				e.style.left = p.x + 'px'
+			}
+			else {
+				e.style.top = p.y + 'px'
+			}
+		}
+
+		function isNumberKey(evt) {
+			let charCode = (evt.which) ? evt.which : evt.keyCode;
+			return (charCode >= 48 && charCode <= 57);
+		}
+
 		function init() {
 			let f = document.getElementById("form");
 			let e = document.getElementById("osd_elements");
+			let e2 = document.getElementById("osd_elements2");
 			let b1 = document.getElementById("btnGenerate");
 			let b2 = document.getElementById("btnGenerateSave");
+			let osd_image = document.getElementById("osd_image");
 			f.reset();
 			b1.disabled = true;
 			b2.disabled = true;
+			//Init context
+			let count = 0;
 			for (let [key, ovalue] of Object.entries(OSD_Elements)) {
+				if (count == 9) {
+					e = e2;
+				}
 				let value = osd.elements[key];
-				let s = "<tr>" +
-					"<td class='osd_name'><label for='" + key + "_x'>" + ovalue.name + "</label></td>" +
-					"<td><input type='checkbox' id='" + key + "_0' value='true'></input></td>" +
-					"<td><input type='checkbox' id='" + key + "_1' value='true'></input></td>" +
-					"<td><input type='checkbox' id='" + key + "_2' value='true'></input></td>" +
-					"<td><input type='text' size='4' id='" + key + "_x' value='" + value.x + "'></input></td>" +
-					"<td><input type='text' size='4' id='" + key + "_y' value='" + value.y + "'></input></td>" +
+				let r = "<tr>" +
+					"<td class='osd_name'><label for='" + key + "_0'>" + ovalue.name + "</label></td>" +
+					"<td><input type='checkbox' id='" + key + "_0' onchange='updateOSDImage()' value='true'></input></td>" +
+					"<td><input type='checkbox' id='" + key + "_1' onchange='updateOSDImage()' value='true'></input></td>" +
+					"<td><input type='checkbox' id='" + key + "_2' onchange='updateOSDImage()' value='true'></input></td>" +
+					"<td><input type='text' oninput='posChange(this)' maxlength='2' onkeypress='return isNumberKey(event)' size='2' id='" + key + "_x' value='" + value.x + "'></input></td>" +
+					"<td><input type='text' oninput='posChange(this)' maxlength='2' onkeypress='return isNumberKey(event)' size='2' id='" + key + "_y' value='" + value.y + "'></input></td>" +
 					"</tr>";
-				e.innerHTML += s;
+				e.innerHTML += r;
+				//OSD image elements
+				let pos = getImagePosition(value.x, value.y);
+				let s = document.createElement("span");
+				s.id = "osd_" + key;
+				s.className = "osd_drag";
+				s.draggable = true;
+				s.style.left = pos.x + "px";
+				s.style.top = pos.y + "px";
+				s.style.display = "none";
+				s.ondragstart = drag;
+				s.innerText = getDisplayValue(key);
+				osd_image.appendChild(s);
+				count++;
 			}
 		}
 	</script>
@@ -1054,25 +1246,6 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		<input id="cli_file" class="file" type="file" accept=".txt,.cli,.dump" onchange="loadCLI(this.files[0])">
 		<input id="load_config" class="file" type="file" accept=".json" onchange="loadConfig(this.files[0])">
 		<div class="row">
-			<div id="osd_settings" class="column">
-				<h2>OSD elements:</h2>
-				<table class="cnf">
-					<thead class="cnf">
-						<tr>
-							<th>Name</th>
-							<th>1</th>
-							<th>2</th>
-							<th>3</th>
-							<th>X%</th>
-							<th>Y%</th>
-						</tr>
-					</thead>
-					<tbody class="cnf" id="osd_elements">
-					</tbody>
-				</table>
-				<input type="button" id="btnSave" value="Save..." onclick="saveConfig()">
-				<input type="button" onclick="document.getElementById('load_config').click()" value="Load...">
-			</div>
 			<div id="log_settings" class="column">
 				<h2>Log file and settings:</h2>
 				<table class="cnf">
@@ -1111,7 +1284,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								<label for="osd_profile">OSD profile:</label>
 							</td>
 							<td>
-								<select id="osd_profile">
+								<select id="osd_profile" onchange="updateOSDImage()">
 									<option value="0">1</option>
 									<option value="1">2</option>
 									<option value="2">3</option>
@@ -1123,7 +1296,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								<label for="units">Units:</label>
 							</td>
 							<td>
-								<select id="units">
+								<select id="units" onchange="updateUIElements()">
 									<option value="METRIC">Metric</option>
 									<option value="IMPERIAL">Imperial</option>
 									<option value="UK">UK</option>
@@ -1169,7 +1342,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								<label for="trim_start">Trim start (ms):</label>
 							</td>
 							<td>
-								<input type="text" id="trim_start" size="8" value="0">
+								<input type="text" id="trim_start" size="8" value="0"
+									onkeypress="return isNumberKey(event)" maxlength="8">
 							</td>
 						</tr>
 						<tr>
@@ -1177,7 +1351,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								<label for="trim_end">Trim end (ms):</label>
 							</td>
 							<td>
-								<input type="text" id="trim_end" size="8" value="0">
+								<input type="text" id="trim_end" size="8" value="0"
+									onkeypress="return isNumberKey(event)" maxlength="8">
 							</td>
 						</tr>
 						<tr>
@@ -1185,7 +1360,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								<label for="delay">Delay (ms):</label>
 							</td>
 							<td>
-								<input type="text" id="delay" size="8" value="0">
+								<input type="text" id="delay" size="8" value="0" maxlength="8"
+									onkeypress="return isNumberKey(event)">
 							</td>
 						</tr>
 						<tr>
@@ -1221,7 +1397,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 								<label for="fontsize">Font size:</label>
 							</td>
 							<td>
-								<input type="number" min="1" id="fontsize" size="6" value="46"> (px)
+								<input type="number" min="1" id="fontsize" value="46"
+									onkeypress="return isNumberKey(event)"> (px)
 							</td>
 						</tr>
 					</tbody>
@@ -1231,9 +1408,48 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				<input type="button" id="btnGenerateSave" value="Generate and save..." disabled="disabled"
 					onclick="generateSubtitles(true)">
 			</div>
+			<div class="column">
+				<h2>OSD Elements:</h2>
+				<div id="osd_image" ondrop="drop(event)" ondragover="allowDrop(event)">
+				</div>
+				<div id="osd_settings">
+					<div>
+						<input type="button" id="btnSave" value="Save..." onclick="saveConfig()">
+						<input type="button" onclick="document.getElementById('load_config').click()" value="Load...">
+					</div>
+					<table class="cnf" id="elements_table1">
+						<thead class="cnf">
+							<tr>
+								<th>Name</th>
+								<th>1</th>
+								<th>2</th>
+								<th>3</th>
+								<th>X%</th>
+								<th>Y%</th>
+							</tr>
+						</thead>
+						<tbody class="cnf" id="osd_elements">
+						</tbody>
+					</table>
+					<table class="cnf" id="elements_table2">
+						<thead class="cnf">
+							<tr>
+								<th>Name</th>
+								<th>1</th>
+								<th>2</th>
+								<th>3</th>
+								<th>X%</th>
+								<th>Y%</th>
+							</tr>
+						</thead>
+						<tbody class="cnf" id="osd_elements2">
+						</tbody>
+					</table>
+				</div>
+			</div>
 			<div id="subtitle_output" class="column">
 				<h2 id="subtitle_header">Subtitles:</h2>
-				<textarea id="subtitles_text" rows="36" readonly="readonly"></textarea>
+				<textarea id="subtitles_text" rows="50" readonly="readonly"></textarea>
 			</div>
 		</div>
 	</form>
