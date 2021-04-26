@@ -177,6 +177,14 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			return str;
 		}
 
+		function padRight(str, ch, size) {
+			str = str.toString();
+			while (str.length < size) {
+				str = str + ch;
+			}
+			return str;
+		}
+
 		function left(str, sep) {
 			let p = str.indexOf(sep);
 			if (p > -1) {
@@ -271,6 +279,27 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			return (b + 360) % 360;
 		}
 
+		function countOccurences(str, value) {
+			let count = 0;
+			let p = str.indexOf(value);
+			while (p > -1) {
+				count++;
+				p = str.indexOf(value, p + value.length)
+			}
+			return count;
+		}
+
+		function ISODate(date, time) {
+			if (date.includes("/")) {
+				let [day, month, year] = date.split("/");
+				date = year + "-" + padLeft(month, '0', 2) + "-" + padLeft(day, '0', 2);
+			}
+			if (countOccurences(time, ":") < 2) {
+				time = padRight("00:" + time, '0', 12);
+			}
+			return date + 'T' + time + 'Z';
+		}
+
 		function getLogValue(key, log) {
 			let e = OSD_Elements[key];
 			if (e.log_names != null) {
@@ -351,7 +380,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		function AvgCellFormat(v, ctx) {
-			if (ctx.logname == "RxBt(V)") {
+			if (ctx.logname == "rxbt(v)") {
 				let cells = ctx.osd.cells;
 				if (cells == 0) {
 					let start_vbat = ctx.flight.logs[0][ctx.logname];
@@ -383,10 +412,6 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				return null;
 			}
 			return "Lon: " + right(v, ' ')
-		}
-
-		function DateTimeFormat(v, ctx) {
-			return DefFormat(ctx.log["Date"] + " " + left(ctx.log["Time"], '.'), ctx);
 		}
 
 		function TimerFormat(v, ctx) {
@@ -446,25 +471,31 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			return DefFormat(v, ctx)
 		}
 
+		function BattCurrFormat(v, ctx) {
+			v = parseFloat(v).toFixed(1);
+			return DefFormat(v, ctx)
+		}
+
 		OSD_Elements = { //ctx = {logname,format,log,flight,osd,element}
-			"altitude": { item: 15, name: "Altitude", short: "Alt", log_names: ["GAlt(m)", "Alt(m)"], format: AltFormat },
-			"avg_cell_voltage": { item: 32, name: "Battery average cell voltage", short: "BattAvg", unit: ["V"], symbol: "\u{1F50B}", log_names: ["Batt(V)", "RxBt(V)"], format: AvgCellFormat },
-			"current": { item: 11, name: "Battery current draw", short: "Curr", symbol: "", unit: ["A"], log_names: ["Curr(A)"], format: DefFormat },
-			"mah_drawn": { item: 12, name: "Battery current mAh drawn", short: "CurrDrawn", symbol: "", unit: [" mA/h"], log_names: ["Capa(mAh)"], format: DefFormat },
-			"osd_vbat": { item: 1, name: "Battery voltage", short: "Batt", unit: ["V"], symbol: "\u{1F50B}", log_names: ["VFAS(v)", "RxBt(V)"], format: DefFormat },
+			"altitude": { item: 15, name: "Altitude", short: "Alt", log_names: ["galt(m)", "alt(m)"], format: AltFormat },
+			"avg_cell_voltage": { item: 32, name: "Battery average cell voltage", short: "BattAvg", unit: ["V"], symbol: "\u{1F50B}", log_names: ["batt(v)", "rxbt(v)"], format: AvgCellFormat },
+			"battery_usage": { item: 38, name: "Battery usage", short: "Batt(%)", unit: ["%"], symbol: "\u{1F50B}", log_names: ["bat_(%)"], format: DefFormat },
+			"current": { item: 11, name: "Battery current draw", short: "Curr", symbol: "", unit: ["A"], log_names: ["curr(a)"], format: BattCurrFormat },
+			"mah_drawn": { item: 12, name: "Battery current mAh drawn", short: "CurrDrawn", symbol: "", unit: [" mA/h"], log_names: ["capa(mah)"], format: DefFormat },
+			"osd_vbat": { item: 1, name: "Battery voltage", short: "Batt", unit: ["V"], symbol: "\u{1F50B}", log_names: ["vfas(v)", "rxbt(v)"], format: DefFormat },
 			"craft_name": { item: 8, name: "Craft name", short: "Craft", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.craft_name, ctx) } },
 			"crosshair": { item: 2, name: "Crosshairs", symbol: "\u{271B}", format: function (v, ctx) { return DefFormat("", ctx) } },
 			"display_name": { name: "Display name", short: "Name", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.display_name, ctx) } },
 			"flight_dist": { item: 40, name: "Flight distance", short: "FltDist", symbol: "\u{21BB}", log_names: ["$TRAVEL"], format: DistFormat },
-			"gps_lat": { item: 21, name: "Gps Latitude", short: "Lat", log_names: ["GPS"], format: GPSLat },
-			"gps_lon": { item: 20, name: "Gps Longitute", short: "Lon", log_names: ["GPS"], format: GPSLon },
-			"gps_sats": { item: 14, name: "Gps Sats", short: "Sats", symbol: "\u{1F6F0}", log_names: ["Sats"], format: DefFormat },
-			"gps_speed": { item: 13, name: "Gps speed", short: "Speed", unit: [" km/h", " mph", " mph"], symbol: "\u{238B}", log_names: ["GSpd(kmh)"], format: GPSSpeedFormat },
+			"gps_lat": { item: 21, name: "Gps Latitude", short: "Lat", log_names: ["gps"], format: GPSLat },
+			"gps_lon": { item: 20, name: "Gps Longitute", short: "Lon", log_names: ["gps"], format: GPSLon },
+			"gps_sats": { item: 14, name: "Gps Sats", short: "Sats", symbol: "\u{1F6F0}", log_names: ["sats"], format: DefFormat },
+			"gps_speed": { item: 13, name: "Gps speed", short: "Speed", unit: [" km/h", " mph", " mph"], symbol: "\u{238B}", log_names: ["gspd(kmh)"], format: GPSSpeedFormat },
 			"home_dir": { item: 22, name: "Home direction", short: "HomeDir", log_names: ["$DIRECTION"], symbols: ["\u{2B61}", "\u{2B67}", "\u{2B62}", "\u{2B68}", "\u{2B63}", "\u{2B69}", "\u{2B60}", "\u{2B66}"], format: DirectionFormat },
 			"home_dist": { item: 23, name: "Home distance", short: "HomeDist", symbol: "\u{1F3E0}", log_names: ["$DISTANCE"], format: DistFormat },
-			"rssi": { item: 0, name: "Rssi Value", short: "RSSI", unit: ["%"], symbol: "\u{1F4F6}", log_names: ["RSSI(%)", "TQly(%)"], format: RSSIFormat },
-			"throttle": { item: 9, name: "Throttle position", short: "Thr", symbol: "\u{23E6}", log_names: ["Thr"], format: ThrottleFormat },
-			"rtc_date_time": { item: 29, name: "RTC date and time", short: "Time", symbol: "", format: DateTimeFormat },
+			"rssi": { item: 0, name: "Rssi Value", short: "RSSI", unit: ["%"], symbol: "\u{1F4F6}", log_names: ["rssi(%)", "tqly(%)"], format: RSSIFormat },
+			"throttle": { item: 9, name: "Throttle position", short: "Thr", symbol: "\u{23E6}", log_names: ["thr"], format: ThrottleFormat },
+			"rtc_date_time": { item: 29, name: "RTC date and time", short: "Time", symbol: "", log_names: ["$DSPDATE"], format: DefFormat },
 			"tim_1": { item: 28, name: "Timer 1", short: "Fly/mn", symbol: "\u{23F1}", format: TimerFormat },
 			"tim_2": { name: "Timer 2", short: "Fly/mn", symbol: "\u{23F1}", format: TimerFormat }
 		}
@@ -615,9 +646,13 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					let element = {};
 					let values = lines[i].split(",");
 					for (let j = 0; j < values.length; j++) {
-						element[headers[j]] = values[j];
+						element[headers[j].toLowerCase()] = values[j];
 					}
-					let ms = Date.parse(element["Date"] + 'T' + element["Time"] + 'Z');
+					let date = ISODate(element["date"], element["time"]);
+					let dsp_date = left(date.replace("T", " "), '.');
+					element["$DATE"] = date;
+					element["$DSPDATE"] = dsp_date;
+					let ms = Date.parse(date);
 					element["$MS"] = ms;
 					tmp_logs.push(element);
 				}
@@ -633,7 +668,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 						let end_ms = tmp_logs[i + 1]["$MS"];
 						current_interval = (end_ms - start_ms);
 					}
-					if (current_interval > MAX_INTERVAL) {
+					if (current_interval < 0 || current_interval > MAX_INTERVAL) {
 						e["$INTERVAL"] = last_interval;
 						current_flight.logs.push(e);
 						tmp_flights.push(current_flight);
@@ -652,12 +687,11 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				//Assign names to flights and calculate GPS stuff
 				for (let i = 0; i < tmp_flights.length; i++) {
 					let f = tmp_flights[i];
-					let date = f.logs[0]["Date"]
-					let time = left(f.logs[0]["Time"], '.');
+					let dsp_date = f.logs[0]["$DSPDATE"];
 					let start_ms = f.logs[0]["$MS"];
 					let end_ms = f.logs[f.logs.length - 1]["$MS"];
 					let flight_time = msToTime(end_ms - start_ms);
-					f.name = date + " " + time + " (" + flight_time + ")";
+					f.name = dsp_date + " (" + flight_time + ")";
 					let home_lat = null;
 					let home_lon = null;
 					let last_lat = null;
@@ -670,7 +704,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					}
 					let gps_queue = new Queue(queue_size)
 					for (let j = 0; j < f.logs.length; j++) {
-						let gps = f.logs[j]["GPS"];
+						let gps = f.logs[j]["gps"];
 						if (gps) {
 							let lat = left(gps, " ");
 							let lon = right(gps, " ");
@@ -1141,18 +1175,18 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			"$DISTANCE": 432,
 			"$DIRECTION": 135,
 			"$TRAVEL": 653,
-			"Date": "2017-11-11",
-			"Time": "16:20:00",
-			"Alt(m)": 399,
-			"Batt(V)": 3.98,
-			"Curr(A)": 42,
-			"Capa(mAh)": 690,
-			"VFAS(v)": 16.8,
-			"GPS": "00.000000 -00.000000",
-			"GSpd(kmh)": 40,
-			"Sats": 14,
-			"RSSI(%)": 99,
-			"Thr": 380
+			"$DSPDATE": "2017-11-11 16:20:00",
+			"alt(m)": 399,
+			"batt(v)": 3.98,
+			"bat_(%)": 95,
+			"curr(a)": 42,
+			"capa(mah)": 690,
+			"vfas(v)": 16.8,
+			"gps": "00.000000 -00.000000",
+			"gspd(kmh)": 40,
+			"sats": 14,
+			"rssi(%)": 99,
+			"thr": 380
 		}
 
 		function getDisplayValue(key) {
@@ -1203,7 +1237,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			//Init context
 			let count = 0;
 			for (let [key, ovalue] of Object.entries(OSD_Elements)) {
-				if (count == 9) {
+				if (count == 10) {
 					e = e2;
 				}
 				let value = osd.elements[key];
