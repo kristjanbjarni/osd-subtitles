@@ -1,6 +1,6 @@
 # OSD Subtitles
 
-This utility combines OpenTX telemetry log files with [Betaflight] OSD elements and produces a subtitle file with OSD overlay similiar to the the Betaflight OSD. You can then play your flight video with subtitle OSD elements in a video player like [VLC] or import them into Youtube. Not all OSD elements are currently supported and some may display differently from Betaflight.
+This utility combines OpenTX telemetry log files with [Betaflight] OSD elements and produces a subtitle file with OSD overlay similiar to the the Betaflight OSD. You can then play your flight video with subtitle OSD elements in a video player like [VLC] or import them into YouTube. Not all OSD elements are currently supported and some may display differently from Betaflight.
 
 **If you have any issues or improvements you can raise them on the project site [osd-subtitles].**
 
@@ -32,7 +32,7 @@ There is currently support for [SRT], [SSA] and [WebVTT] subtitle formats.
 - `SRT` is a very simple one line text with all values combined. This format does not include any positioning or symbols, but is widely supported.
 - `SSA` format includes positioning, unicode symbols, font and font size. This format can be used for example to burn subtitles into video using [FFmpeg]. The font name is dependent on what fonts are available on the system, so I would recommend to use any one of these standard fonts: `Arial`, `Arial Black`, `Tahoma`, `Times New Roman` and `Verdana`.
 - `WebVTT` format includes positioning and unicode symbols. This format is widely supported for web videos.
-- `WebVTT (Youtube)` is the same as the WebVTT format but includes different positioning since Youtube doesn't implement the WebVTT standard correctly.
+- `WebVTT (YouTube)` is the same as the WebVTT format but includes different positioning since YouTube doesn't implement the WebVTT standard correctly.
 
 Click on `Generate` to preview the output or click on `Generate and save` to save the subtitle file directly to your computer and then add this subtitle file to your flight video.
 
