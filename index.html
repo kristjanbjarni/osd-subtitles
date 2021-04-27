@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <!--
-OSD Subtitles
+OSD Subtitles (2021-04-27)
 
 https://github.com/kristjanbjarni/osd-subtitles/
 -->
@@ -15,12 +15,11 @@ https://github.com/kristjanbjarni/osd-subtitles/
 	<link rel="icon" href="favicon.png">
 	<title>OSD Subtitles</title>
 	<style>
-		#osd_image {
+		#osd_container {
 			width: 640px;
 			height: 480px;
 			border: 1px solid #aaaaaa;
 			position: relative;
-			background-image: url("docs/osd.jpg");
 		}
 
 		.osd_drag {
@@ -1230,7 +1229,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			let e2 = document.getElementById("osd_elements2");
 			let b1 = document.getElementById("btnGenerate");
 			let b2 = document.getElementById("btnGenerateSave");
-			let osd_image = document.getElementById("osd_image");
+			let osd_container = document.getElementById("osd_container");
 			f.reset();
 			b1.disabled = true;
 			b2.disabled = true;
@@ -1241,7 +1240,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					e = e2;
 				}
 				let value = osd.elements[key];
-				let r = "<tr>" +
+				let osd_name_id = "osd_name_" + key;
+				let r = "<tr id='" + osd_name_id + "'>" +
 					"<td class='osd_name'><label for='" + key + "_0'>" + ovalue.name + "</label></td>" +
 					"<td><input type='checkbox' id='" + key + "_0' onchange='updateOSDImage()' value='true'></input></td>" +
 					"<td><input type='checkbox' id='" + key + "_1' onchange='updateOSDImage()' value='true'></input></td>" +
@@ -1249,19 +1249,25 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					"<td><input type='text' oninput='posChange(this)' maxlength='2' onkeypress='return isNumberKey(event)' size='2' id='" + key + "_x' value='" + value.x + "'></input></td>" +
 					"<td><input type='text' oninput='posChange(this)' maxlength='2' onkeypress='return isNumberKey(event)' size='2' id='" + key + "_y' value='" + value.y + "'></input></td>" +
 					"</tr>";
-				e.innerHTML += r;
+				if (document.getElementById(osd_name_id) == null) {
+					e.innerHTML += r;
+				}
 				//OSD image elements
-				let pos = getImagePosition(value.x, value.y);
-				let s = document.createElement("span");
-				s.id = "osd_" + key;
-				s.className = "osd_drag";
-				s.draggable = true;
-				s.style.left = pos.x + "px";
-				s.style.top = pos.y + "px";
-				s.style.display = "none";
+				let osd_id = "osd_" + key;
+				let s = document.getElementById(osd_id);
+				if (s == null) {
+					let pos = getImagePosition(value.x, value.y);
+					s = document.createElement("span");
+					s.id = osd_id;
+					s.className = "osd_drag";
+					s.draggable = true;
+					s.style.left = pos.x + "px";
+					s.style.top = pos.y + "px";
+					s.style.display = "none";
+					s.innerText = getDisplayValue(key);
+					osd_container.appendChild(s);
+				}
 				s.ondragstart = drag;
-				s.innerText = getDisplayValue(key);
-				osd_image.appendChild(s);
 				count++;
 			}
 		}
@@ -1444,7 +1450,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			</div>
 			<div class="column">
 				<h2>OSD Elements:</h2>
-				<div id="osd_image" ondrop="drop(event)" ondragover="allowDrop(event)">
+				<div id="osd_container" ondrop="drop(event)" ondragover="allowDrop(event)">
+					<img draggable="false" src="docs/osd.jpg" />
 				</div>
 				<div id="osd_settings">
 					<div>
