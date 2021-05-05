@@ -644,7 +644,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				for (let i = 0; i < lines.length; i++) {
 					let element = {};
 					let values = lines[i].split(",");
-					for (let j = 0; j < values.length; j++) {
+					for (let j = 0; j < headers.length; j++) {
 						element[headers[j].toLowerCase()] = values[j];
 					}
 					let date = ISODate(element["date"], element["time"]);
