@@ -11,10 +11,13 @@ First of all you need to have [telemetry](https://oscarliang.com/sbus-smartport-
 On the main [OSD Subtitles] page start by selecting the OpenTX log file you want to import by clicking on `Open...` for the log. Currently only FrSky and Crossfire telemetry have been tested, so other telemetry may not work. When a log file for a whole day is loaded the individual flights inside the log file are split into different flight logs and displayed in the `Flight` selection. This only works if the time between different flights is more than 10 seconds. Select which flight you want to generate subtitles for in the selection box. The name of the flight is the start date and the duration of the flight is in parenthesis in `min:sec`.
 
 ## CLI file
-Next you can select the [CLI](https://oscarliang.com/betaflight-cli-explained/) dump file for the craft. You can get this information in the CLI by using `diff all` and then saving it to a text file. This step is not required but loading the correct CLI file will pre fill the values for the OSD elements, profile, units, position, craft name and display name, otherwise you will have to input them all individually. You can also save and load this information from a config file if you want to have a custom position config different from the CLI file. This is mainly for the Betaflight CLI format but some elements of [iNav] are also partially supported.
+Next you can select the [CLI](https://oscarliang.com/betaflight-cli-explained/) dump file for the craft. You can get this information in the CLI by using `diff all` and then saving it to a text file. This step is not required but loading the correct CLI file will pre fill the values for the OSD elements, Post Flight Statistics, profile, units, position, craft name and display name, otherwise you will have to input them all individually. You can also save and load this information from a config file if you want to have a custom position config different from the CLI file. This is mainly for the Betaflight CLI format but some elements of [iNav] are also partially supported.
 
 ## OSD elements
-Here you can change the position of the OSD elements using either the mouse to drag and drop the elements or specify the position directly with X and Y values which are in percentage of the video screen. So for example `x=0%, y=0%` would be in the upper left corner, `x=50%, y=%50` would be in the middle of the screen and `x=100%, y=100%` would be in the lower right corner of the video. Note that for some players there are extra margins for all subtitles so the subtitles start from the margin instead of the whole screen so that means the position doesn't always map correctly to screen size.
+Select what elements you want to use by check marking them for the selected OSD profile number. On the image screen you can change the position of the OSD elements using either the mouse to drag and drop the elements or specify the position directly in the element with X and Y values which are in percentage of the video screen. So for example `x=0%, y=0%` would be in the upper left corner, `x=50%, y=%50` would be in the middle of the screen and `x=100%, y=100%` would be in the lower right corner of the video. Note that for some players there are extra margins for all subtitles so the subtitles start from the margin instead of the whole screen so that means the position doesn't always map correctly to screen size.
+
+## Post Flight Statistics
+Select what post flight statistics values you want to show. The `Post Flight Statistics` will be shown on screen for one minute after the flight has ended.
 
 ## Other Settings
 Select what OSD profile index you want to use for the subtitles. Select the battery cell count of the craft if you display the average battery voltage or you can use `Auto` which will try to guess the cell count, but this sometimes does not work correctly if the starting voltage in the log is less than maximum cell voltage, in that case select the correct number of cells. If you want to display `Craft name` and `Display name` you can input those in the corresponding fields.
@@ -27,10 +30,10 @@ The delay field is for adjusting the timing of the subtitles. This can be useful
 
 ## Subtitle format.
 
-There is currently support for [SRT], [SSA] and [WebVTT] subtitle formats.
+There is currently support for [SSA], [SRT] and [WebVTT] subtitle formats.
 
-- `SRT` is a very simple one line text with all values combined. This format does not include any positioning or symbols, but is widely supported.
 - `SSA` format includes positioning, unicode symbols, font and font size. This format can be used for example to burn subtitles into video using [FFmpeg]. The font name is dependent on what fonts are available on the system, so I would recommend to use any one of these standard fonts: `Arial`, `Arial Black`, `Tahoma`, `Times New Roman` and `Verdana`.
+- `SRT` is a very simple one line text with all values combined. This format does not include any positioning or symbols, but is widely supported.
 - `WebVTT` format includes positioning and unicode symbols. This format is widely supported for web videos.
 - `WebVTT (YouTube)` is the same as the WebVTT format but includes different positioning since YouTube doesn't implement the WebVTT standard correctly.
 
