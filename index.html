@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <!--
-OSD Subtitles (2021-06-12)
+OSD Subtitles (2022-01-10)
 
 https://github.com/kristjanbjarni/osd-subtitles/
 -->
@@ -10,7 +10,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 	<meta charset="UTF-8">
 	<meta name="title" content="OSD Subtitles">
 	<meta name="description"
-		content="Utility to combine OpenTX telemetry log files with Betaflight OSD to produce subtitle files">
+		content="Utility to combine OpenTX/Blackbox log files with Betaflight OSD to produce subtitle files">
 	<meta property="og:image" content="https://kristjanbjarni.github.io/osd-subtitles/docs/osd-subtitles.jpg">
 	<link rel="icon" href="favicon.png">
 	<title>OSD Subtitles</title>
@@ -135,6 +135,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		const STATS_X = 35;
 		const STATS_Y_START = 10;
 		const STATS_Y = 6;
+		const BLACKBOX_FIELDS = ["dateTime", "time (us)", "time", "BaroAlt", "BaroAlt (cm)", "rssi", "vbat", "vbat (V)", "GPS_numSat", "GPS_coord[0]", "GPS_coord[1]", "GPS_altitude", "GPS_speed (m/s)"];
+		const MAX_BLACKBOX_INTERVAL = 200; //Only use Blackbox log every 200ms
 
 		function allowDrop(ev) {
 			ev.preventDefault();
@@ -202,6 +204,23 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				str = str.substring(0, p);
 			}
 			return str;
+		}
+
+		function splitCSV(s) {
+			var matches = s.match(/(\s*"[^"]+"\s*|\s*[^,]+|,)(?=,|$)/g);
+			for (var n = 0; n < matches.length; ++n) {
+				m = matches[n].trim();
+				if (m == ',') m = '';
+				if (m.startsWith('"')) m = m.substring(1);
+				if (m.endsWith('"')) m = m.substring(0, m.length - 1);
+				matches[n] = m;
+			}
+			if (s[0] == ',') matches.unshift("");
+			return matches;
+		}
+
+		function splitLines(text) {
+			return text.split(/(?:\r\n|\n)+/).filter(function (el) { return el.length != 0 });
 		}
 
 		function toNumber(n, def) {
@@ -408,7 +427,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		function AvgCellFormat(v, ctx) {
-			if (ctx.logname == "rxbt(v)") {
+			let n = ctx.logname;
+			if (n == "rxbt(v)" || n == "vbat (v)") {
 				let cells = ctx.osd.cells;
 				if (cells == 0) {
 					let start_vbat = ctx.flight.logs[0][ctx.logname];
@@ -505,20 +525,20 @@ https://github.com/kristjanbjarni/osd-subtitles/
 		}
 
 		OSD_Elements = { //ctx = {logname:string, format:string, log:{}, flight, osd:OSD, element:OSD_Elements, stat:OSD_Stat_Elements}
-			"altitude": { item: 15, name: "Altitude", short: "Alt", log_names: ["galt(m)", "alt(m)"], format: AltFormat },
-			"avg_cell_voltage": { item: 32, name: "Battery average cell voltage", short: "BattAvg", unit: ["V"], symbol: "\u{1F50B}", log_names: ["batt(v)", "rxbt(v)"], format: AvgCellFormat },
+			"altitude": { item: 15, name: "Altitude", short: "Alt", log_names: ["galt(m)", "alt(m)", "gps_altitude"], format: AltFormat },
+			"avg_cell_voltage": { item: 32, name: "Battery average cell voltage", short: "BattAvg", unit: ["V"], symbol: "\u{1F50B}", log_names: ["batt(v)", "rxbt(v)", "vbat (v)"], format: AvgCellFormat },
 			"battery_usage": { item: 38, name: "Battery usage", short: "Batt(%)", unit: ["%"], symbol: "\u{1F50B}", log_names: ["bat_(%)"], format: DefFormat },
 			"current": { item: 11, name: "Battery current draw", short: "Curr", symbol: "", unit: ["A"], log_names: ["curr(a)"], format: BattCurrFormat },
 			"mah_drawn": { item: 12, name: "Battery current mAh drawn", short: "CurrDrawn", symbol: "", unit: [" mA/h"], log_names: ["capa(mah)"], format: DefFormat },
-			"osd_vbat": { item: 1, name: "Battery voltage", short: "Batt", unit: ["V"], symbol: "\u{1F50B}", log_names: ["vfas(v)", "rxbt(v)"], format: DefFormat },
+			"osd_vbat": { item: 1, name: "Battery voltage", short: "Batt", unit: ["V"], symbol: "\u{1F50B}", log_names: ["vfas(v)", "rxbt(v)", "vbat (v)"], format: DefFormat },
 			"craft_name": { item: 8, name: "Craft name", short: "Craft", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.craft_name, ctx) } },
 			"crosshair": { item: 2, name: "Crosshairs", symbol: "\u{271B}", format: function (v, ctx) { return DefFormat("", ctx) } },
 			"display_name": { name: "Display name", short: "Name", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.display_name, ctx) } },
 			"flight_dist": { item: 40, name: "Flight distance", short: "FltDist", symbol: "\u{21BB}", log_names: ["$TRAVEL"], format: DistFormat },
 			"gps_lat": { item: 21, name: "Gps Latitude", short: "Lat", log_names: ["gps"], format: GPSLat },
 			"gps_lon": { item: 20, name: "Gps Longitute", short: "Lon", log_names: ["gps"], format: GPSLon },
-			"gps_sats": { item: 14, name: "Gps Sats", short: "Sats", symbol: "\u{1F6F0}", log_names: ["sats"], format: DefFormat },
-			"gps_speed": { item: 13, name: "Gps speed", short: "Speed", unit: [" km/h", " mph", " mph"], symbol: "\u{238B}", log_names: ["gspd(kmh)"], format: GPSSpeedFormat },
+			"gps_sats": { item: 14, name: "Gps Sats", short: "Sats", symbol: "\u{1F6F0}", log_names: ["sats", "gps_numsat"], format: DefFormat },
+			"gps_speed": { item: 13, name: "Gps speed", short: "Speed", unit: [" km/h", " mph", " mph"], symbol: "\u{238B}", log_names: ["gspd(kmh)", "gps_speed (m/s)"], format: GPSSpeedFormat },
 			"home_dir": { item: 22, name: "Home direction", short: "HomeDir", log_names: ["$DIRECTION"], symbols: ["\u{2B61}", "\u{2B67}", "\u{2B62}", "\u{2B68}", "\u{2B63}", "\u{2B69}", "\u{2B60}", "\u{2B66}"], format: DirectionFormat },
 			"home_dist": { item: 23, name: "Home distance", short: "HomeDist", symbol: "\u{1F3E0}", log_names: ["$DISTANCE"], format: DistFormat },
 			"rssi": { item: 0, name: "Rssi Value", short: "RSSI", unit: ["%"], symbol: "\u{1F4F6}", log_names: ["rssi(%)", "tqly(%)"], format: RSSIFormat },
@@ -705,57 +725,20 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				return this.flights != null;
 			}
 
-			load(text) {
-				let tmp_flights = [];
+			calculate() {
+				let tmp_flights = this.flights;
 
-				//Parse and load log lines
-				let lines = text.split(/(?:\r\n|\n)+/).filter(function (el) { return el.length != 0 });
-				this.line_count = lines.length;
-				let headers = lines.splice(0, 1)[0].split(",");
-				let tmp_logs = [];
-				for (let i = 0; i < lines.length; i++) {
-					let element = {};
-					let values = lines[i].split(",");
-					for (let j = 0; j < headers.length; j++) {
-						element[headers[j].toLowerCase()] = values[j];
-					}
-					let date = ISODate(element["date"], element["time"]);
-					let dsp_date = left(date.replace("T", " "), '.');
-					element["$DATE"] = date;
-					element["$DSPDATE"] = dsp_date;
-					let ms = Date.parse(date);
-					element["$MS"] = ms;
-					tmp_logs.push(element);
-				}
-
-				//Split into flights
-				let current_flight = { name: "", logs: [], stats: {} };
-				initStats(current_flight.stats);
-				let last_interval = 0;
-				let current_interval = 0;
-				for (let i = 0; i < tmp_logs.length; i++) {
-					let e = tmp_logs[i];
-					let start_ms = e["$MS"];
-					if (i < tmp_logs.length - 1) {
-						let end_ms = tmp_logs[i + 1]["$MS"];
-						current_interval = (end_ms - start_ms);
-					}
-					if (current_interval < 0 || current_interval > MAX_INTERVAL) {
-						e["$INTERVAL"] = last_interval;
-						current_flight.logs.push(e);
-						tmp_flights.push(current_flight);
-						current_flight = { name: "", logs: [], stats: {} };
-						initStats(current_flight.stats);
-						current_interval = 0;
-						last_interval = 0;
-					}
-					else {
-						e["$INTERVAL"] = current_interval;
-						current_flight.logs.push(e);
-						last_interval = current_interval;
+				//Calc dates
+				for (let i = 0; i < tmp_flights.length; i++) {
+					let f = tmp_flights[i];
+					for (let j = 0; j < f.logs.length; j++) {
+						let l = f.logs[j];
+						let date = ISODate(l["date"], l["time"]);
+						let dsp_date = left(date.replace("T", " "), '.');
+						l["$DATE"] = date;
+						l["$DSPDATE"] = dsp_date;
 					}
 				}
-				tmp_flights.push(current_flight);
 
 				//Assign names to flights and calculate GPS stuff
 				for (let i = 0; i < tmp_flights.length; i++) {
@@ -818,12 +801,165 @@ https://github.com/kristjanbjarni/osd-subtitles/
 
 						//Calculate stats
 						for (let [key, e] of Object.entries(OSD_Stat_Elements)) {
-							e.calc(f.stats, key, e, getLogValue(e.key, f.logs[j]));
+							if (j > 0 || e.key !== "altitude") { //Skip first altitude value, it's usually wrong
+								e.calc(f.stats, key, e, getLogValue(e.key, f.logs[j]));
+							}
 						}
 					}
 				}
+			}
+
+			loadOpenTX(text) {
+				let tmp_flights = [];
+
+				//Parse and load log lines
+				let lines = splitLines(text);
+				this.line_count = lines.length;
+				let headers = lines.splice(0, 1)[0].split(",");
+				let tmp_logs = [];
+				for (let i = 0; i < lines.length; i++) {
+					let element = {};
+					let values = lines[i].split(",");
+					for (let j = 0; j < headers.length; j++) {
+						element[headers[j].toLowerCase()] = values[j];
+					}
+					let date = ISODate(element["date"], element["time"]);
+					let ms = Date.parse(date);
+					element["$MS"] = ms;
+					tmp_logs.push(element);
+				}
+
+				//Split into flights
+				let current_flight = { name: "", logs: [], stats: {} };
+				initStats(current_flight.stats);
+				let last_interval = 0;
+				let current_interval = 0;
+				for (let i = 0; i < tmp_logs.length; i++) {
+					let e = tmp_logs[i];
+					let start_ms = e["$MS"];
+					if (i < tmp_logs.length - 1) {
+						let end_ms = tmp_logs[i + 1]["$MS"];
+						current_interval = (end_ms - start_ms);
+					}
+					if (current_interval < 0 || current_interval > MAX_INTERVAL) {
+						e["$INTERVAL"] = last_interval;
+						current_flight.logs.push(e);
+						tmp_flights.push(current_flight);
+						current_flight = { name: "", logs: [], stats: {} };
+						initStats(current_flight.stats);
+						current_interval = 0;
+						last_interval = 0;
+					}
+					else {
+						e["$INTERVAL"] = current_interval;
+						current_flight.logs.push(e);
+						last_interval = current_interval;
+					}
+				}
+				tmp_flights.push(current_flight);
 				this.flights = tmp_flights;
 			}
+
+			loadBlackbox(text) {
+				let tmp_flights = [];
+				let log_start_datetime = null;
+				let headers = [];
+
+				//Parse and load log lines
+				let lines = splitLines(text);
+				text = null;
+				this.line_count = lines.length;
+				let i = 0;
+				for (; i < lines.length; i++) {
+					let values = splitCSV(lines[i]);
+					if (values.length > 2) {
+						headers = values;
+						i += 2; //Skip header and first data line
+						break;
+					}
+					if (values[0] == "Log start datetime") { //Date time for Betaflight logs
+						log_start_datetime = values[1];
+					}
+				}
+
+				let start_ms = -1;
+				if (log_start_datetime) {
+					start_ms = Date.parse(log_start_datetime);
+				}
+				let start_time = -1;
+				let last_time = -1;
+				let total_interval = MAX_BLACKBOX_INTERVAL;
+
+				let tmp_logs = [];
+				for (; i < lines.length; i++) {
+					let values = splitCSV(lines[i]);
+					let time = values[1];
+					if (start_time < 0) {
+						start_time = time;
+						last_time = time;
+					}
+					let interval = (time - last_time) / 1000;
+					last_time = time;
+					total_interval += interval;
+					if (total_interval < MAX_BLACKBOX_INTERVAL) {
+						continue;
+					}
+					let element = {};
+					for (let j = 0; j < headers.length; j++) {
+						if (BLACKBOX_FIELDS.includes(headers[j])) {
+							element[headers[j].toLowerCase()] = values[j];
+						}
+					}
+					total_interval = total_interval - MAX_BLACKBOX_INTERVAL;
+					if (start_ms < 0) {
+						start_ms = 0;
+						if (element["datetime"]) {
+							start_ms = Date.parse(element["datetime"]); //Date time for iNav logs
+						}
+					}
+					let ms = Math.trunc(start_ms + (time - start_time) / 1000);
+					let date = new Date();
+					date.setTime(ms);
+					let isodate = date.toISOString();
+					element["date"] = left(isodate, 'T');
+					element["time"] = trimRight(right(isodate, 'T'), 'Z');
+					element["$MS"] = ms;
+					let lat = element["gps_coord[0]"];
+					if (lat) {
+						element["gps"] = lat + " " + element["gps_coord[1]"];
+					}
+					if (element["baroalt"]) {
+						element["alt(m)"] = element["baroalt"] / 100;
+					}
+					if (element["baroalt (cm)"]) {
+						element["alt(m)"] = element["baroalt (cm)"] / 100;
+					}
+					if (element["vbat"]) {
+						element["vbat (v)"] = element["vbat"] / 100;
+					}
+					if (element["rssi"]) {
+						element["rssi(%)"] = Math.trunc(element["rssi"] / 10);
+					}
+					tmp_logs.push(element);
+				}
+
+				let current_interval = 0;
+				for (let i = 0; i < tmp_logs.length; i++) {
+					let e = tmp_logs[i];
+					let start_ms = e["$MS"];
+					if (i < tmp_logs.length - 1) {
+						let end_ms = tmp_logs[i + 1]["$MS"];
+						current_interval = (end_ms - start_ms);
+					}
+					e["$INTERVAL"] = current_interval;
+				}
+
+				let current_flight = { name: "", logs: tmp_logs, stats: {} };
+				initStats(current_flight.stats);
+				tmp_flights.push(current_flight);
+				this.flights = tmp_flights;
+			}
+
 		}
 
 		class SubtitlesSRT {
@@ -1090,7 +1226,13 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					for (let i = flight_options.options.length - 1; i >= 0; i--) {
 						flight_options.remove(i);
 					}
-					log.load(content);
+					if (content.startsWith('Date,Time,')) {
+						log.loadOpenTX(content);
+					}
+					else {
+						log.loadBlackbox(content);
+					}
+					log.calculate();
 					for (let i = 0; i < log.flights.length; i++) {
 						let name = log.flights[i].name;
 						let option = document.createElement("option");
@@ -1200,6 +1342,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				let eosd = document.getElementById('osd_profile');
 				let osd_profile = eosd.options[eosd.selectedIndex].value;
 				let subitles;
+				let flight_name = log.flights[flight_index].name;
+				let flight_name_safe = flight_name.replaceAll(" ", "_").replaceAll(":", "-");
 				if (format == "srt") {
 					subtitles = new SubtitlesSRT(osd_profile, delay, trim_start, trim_end, osd, log.flights[flight_index]);
 				}
@@ -1218,7 +1362,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					if (format == "ssa") {
 						mime = "text/plain";
 					}
-					let filename = "osd_subtitles." + format;
+					let filename = "osd_subtitles_" + flight_name_safe + "." + format;
 					exportFile(s, mime, filename);
 				}
 			}
@@ -1319,7 +1463,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			osd.units = units.options[units.selectedIndex].value;
 			let flight = { logs: [LOG_DISPLAY_EXAMPLE] };
 			let element = OSD_Elements[key];
-			let ctx = { format: "ssa", log: LOG_DISPLAY_EXAMPLE, flight: flight, osd: osd, element: element };
+			let ctx = { logname: "", format: "ssa", log: LOG_DISPLAY_EXAMPLE, flight: flight, osd: osd, element: element };
 			let value = getLogValue(key, ctx.log);
 			let text = element.format(value, ctx);
 			if (!text) {
@@ -1412,7 +1556,6 @@ https://github.com/kristjanbjarni/osd-subtitles/
 </head>
 
 <body onload="init()">
-
 	<form id="form">
 		<input id="log_file" class="file" type="file" accept=".csv" onchange="loadLog(this.files[0])">
 		<input id="cli_file" class="file" type="file" accept=".txt,.cli,.dump" onchange="loadCLI(this.files[0])">
@@ -1421,10 +1564,9 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			<div id="log_settings" class="column">
 				<h1>OSD Subtitles</h1>
 				<p class="small" style="width:300px;">
-					OSD subtitles combines OpenTX telemetry logs with Betaflight OSD elements and produces a subtitle
-					file with OSD
-					overlay. Read the <a target="_blank" href="docs/howto.html">How to</a> and check out the <a
-						target="_blank" href="https://github.com/kristjanbjarni/osd-subtitles/"> GitHub project</a>.
+					OSD subtitles combines OpenTX/Blackbox logs with Betaflight OSD elements and produces a subtitle
+					file with OSD overlay. Read the <a target="_blank" href="docs/howto.html">How to</a> and check out
+					the <a target="_blank" href="https://github.com/kristjanbjarni/osd-subtitles/"> GitHub project</a>.
 				</p>
 				<h2>Log file and settings:</h2>
 				<table class="cnf">
@@ -1549,7 +1691,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 							</td>
 							<td>
 								<select id="subtitle_format" onchange="formatChanged()">
-									<option value="ssa">SubStation Alpha (SSA)</option>									
+									<option value="ssa">SubStation Alpha (SSA)</option>
 									<option value="srt">SubRip Text (SRT)</option>
 									<option value="vtt">WebVTT</option>
 									<option value="vtt_youtube">WebVTT (YouTube)</option>
