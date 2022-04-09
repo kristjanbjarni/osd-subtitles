@@ -332,19 +332,12 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					}
 				}
 			}
-			return { name: null, value: null };
+			return { name: '', value: null };
 		}
 
 		function getLogValue(key, log) {
 			if (key != null) {
 				return findLogEntry(OSD_Elements[key], log).value;
-			}
-			return null;
-		}
-
-		function getLogNameValue(key, log) {
-			if (key != null) {
-				return findLogEntry(OSD_Elements[key], log);
 			}
 			return null;
 		}
@@ -793,7 +786,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 						f.logs[j]["$TIME_MS"] = f.logs[j]["$MS"] - start_ms;
 						let altitude = null;
 						if (j > 0) { //Skip first altitude value, it's usually wrong							
-						    let logentry = getLogNameValue("altitude",f.logs[j]);
+							let logentry = findLogEntry(OSD_Elements["altitude"], f.logs[j]);
 							altitude = logentry.name.startsWith("baroalt") ? logentry.value / 100 : logentry.value;
 						}
 						if (last_altitude == null) {
