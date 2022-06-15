@@ -776,7 +776,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					let last_lon = null;
 					let total_travel = 0;
 					let last_altitude = null;
-					let queue_size = Math.round((1000 / f.logs[0]["$INTERVAL"])); // 1 second GPS queue for bearing
+					let queue_size = Math.round((1500 / f.logs[0]["$INTERVAL"])); // 1.5 second GPS queue for bearing
 					if (queue_size < 1) {
 						queue_size = 1;
 					}
@@ -1374,9 +1374,6 @@ https://github.com/kristjanbjarni/osd-subtitles/
 				subtitle_text.value = s;
 				if (save == true) {
 					let mime = "text/" + format;
-					if (format == "ssa") {
-						mime = "text/plain";
-					}
 					let filename = "osd_subtitles_" + flight_name_safe + "." + format;
 					exportFile(s, mime, filename);
 				}
