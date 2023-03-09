@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <!--
-OSD Subtitles (2022-06-15)
+OSD Subtitles (2023-03-09)
 
 https://github.com/kristjanbjarni/osd-subtitles/
 -->
@@ -546,6 +546,14 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			return DefFormat(v, ctx)
 		}
 
+		function LQFormat(v, ctx) {
+			let rfmd = ctx.log["rfmd"];
+			if (rfmd) {
+				v = rfmd + ":" + v;
+			}
+			return DefFormat(v, ctx)
+		}
+
 		OSD_Elements = { //ctx = {logname:string, format:string, log:{}, flight, osd:OSD, element:OSD_Elements, stat:OSD_Stat_Elements}
 			"altitude": { item: 15, name: "Altitude", short: "Alt", log_names: ["galt(m)", "alt(m)", "baroalt (cm)", "baroalt", "gps_altitude"], format: AltFormat },
 			"avg_cell_voltage": { item: 32, name: "Battery average cell voltage", short: "BattAvg", unit: ["V"], symbol: "\u{1F50B}", log_names: ["batt(v)", "rxbt(v)", "vbat (v)", "vbat"], format: AvgCellFormat },
@@ -555,16 +563,19 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			"osd_vbat": { item: 1, name: "Battery voltage", short: "Batt", unit: ["V"], symbol: "\u{1F50B}", log_names: ["vfas(v)", "rxbt(v)", "vbat (v)", "vbat"], format: VBatFormat },
 			"craft_name": { item: 8, name: "Craft name", short: "Craft", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.craft_name, ctx) } },
 			"crosshair": { item: 2, name: "Crosshairs", symbol: "\u{271B}", format: function (v, ctx) { return DefFormat("", ctx) } },
-			"display_name": { name: "Display name", short: "Name", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.display_name, ctx) } },
 			"flight_dist": { item: 40, name: "Flight distance", short: "FltDist", symbol: "\u{21BB}", log_names: ["$TRAVEL"], format: DistFormat },
+			"flymode": { item: 7, name: "Fly mode", short: "FM", symbol: "", log_names: ["fm"], format: DefFormat },
 			"gps_lat": { item: 21, name: "Gps Latitude", short: "Lat", log_names: ["gps"], format: GPSLat },
 			"gps_lon": { item: 20, name: "Gps Longitute", short: "Lon", log_names: ["gps"], format: GPSLon },
 			"gps_sats": { item: 14, name: "Gps Sats", short: "Sats", symbol: "\u{1F6F0}", log_names: ["sats", "gps_numsat"], format: DefFormat },
 			"gps_speed": { item: 13, name: "Gps speed", short: "Speed", unit: [" km/h", " mph", " mph"], symbol: "\u{238B}", log_names: ["gspd(kmh)", "gps_speed (m/s)"], format: GPSSpeedFormat },
 			"home_dir": { item: 22, name: "Home direction", short: "HomeDir", log_names: ["$DIRECTION"], symbols: ["\u{2B61}", "\u{2B67}", "\u{2B62}", "\u{2B68}", "\u{2B63}", "\u{2B69}", "\u{2B60}", "\u{2B66}"], format: DirectionFormat },
 			"home_dist": { item: 23, name: "Home distance", short: "HomeDist", symbol: "\u{1F3E0}", log_names: ["$DISTANCE"], format: DistFormat },
+		    "link_quality": { item: 110, name: "Link quality", short: "LQ", log_names: ["rqly(%)"], format: LQFormat },
+			"pilot_name": { name: "Pilot name", short: "Name", symbol: "", format: function (v, ctx) { return DefFormat(ctx.osd.pilot_name, ctx) } },
 			"rssi": { item: 0, name: "Rssi Value", short: "RSSI", unit: ["%"], symbol: "\u{1F4F6}", log_names: ["rssi(%)", "tqly(%)", "rssi"], format: RSSIFormat },
 			"throttle": { item: 9, name: "Throttle position", short: "Thr", symbol: "\u{23E6}", log_names: ["thr", "motor[0]"], format: ThrottleFormat },
+			"link_tx_power": { item: 112, name: "Tx uplink power", short: "TPWR", unit: ["mW"], symbol: "\u{1F4F6}", log_names: ["tpwr(mw)"], format: DefFormat },
 			"rtc_date_time": { item: 29, name: "RTC date and time", short: "Time", symbol: "", log_names: ["$DSPDATE"], format: DefFormat },
 			"tim_1": { item: 28, name: "Timer 1", short: "Fly/mn", symbol: "\u{23F1}", log_names: ["$TIME_MS"], format: TimerFormat },
 			"tim_2": { name: "Timer 2", short: "Fly/mn", symbol: "\u{23F1}", log_names: ["$TIME_MS"], format: TimerFormat }
@@ -655,7 +666,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			elements = {};
 			stat_elements = {};
 			craft_name = "";
-			display_name = "";
+			pilot_name = "";
 			vbat_max_cell_voltage = 430;
 			cells = 0;
 			units = METRIC;
@@ -696,12 +707,18 @@ https://github.com/kristjanbjarni/osd-subtitles/
 						else if (name == "vbat_max_cell_voltage") {
 							this.vbat_max_cell_voltage = value;
 						}
+						else if (name == "craft_name") {
+							this.craft_name = value;
+						}
 						else if (name == "name") {
 							this.craft_name = value;
 						}
-						else if (name == "display_name") {
-							this.display_name = value;
+						else if (name == "pilot_name") {
+							this.pilot_name = value;
 						}
+						else if (name == "display_name") {
+							this.pilot_name = value;
+						}						
 						else if (name == "osd_units") {
 							this.units = value;
 						}
@@ -844,7 +861,11 @@ https://github.com/kristjanbjarni/osd-subtitles/
 					let element = {};
 					let values = lines[i].split(",");
 					for (let j = 0; j < headers.length; j++) {
-						element[headers[j].toLowerCase()] = values[j];
+						let value = values[j];
+						if (value.startsWith('"') && value.endsWith('"')) {
+							value = value.substring(1,value.length-1);
+						}
+						element[headers[j].toLowerCase()] = value;
 					}
 					let date = ISODate(element["date"], element["time"]);
 					let ms = Date.parse(date);
@@ -1285,8 +1306,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			}
 			let e = document.getElementById("craft_name");
 			osd.craft_name = e.value;
-			e = document.getElementById("display_name");
-			osd.display_name = e.value;
+			e = document.getElementById("pilot_name");
+			osd.pilot_name = e.value;
 			let cells = document.getElementById('cells');
 			osd.cells = cells.value;
 			let u = document.getElementById('units');
@@ -1298,8 +1319,8 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			let curr_profile = eprofile.options[eprofile.selectedIndex].value;
 			let c = document.getElementById('craft_name');
 			c.value = osd.craft_name;
-			c = document.getElementById('display_name');
-			c.value = osd.display_name;
+			c = document.getElementById('pilot_name');
+			c.value = osd.pilot_name;
 			if (update_cells) {
 				let cells = document.getElementById('cells');
 				cells.value = osd.cells;
@@ -1464,14 +1485,18 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			"gspd(kmh)": 40,
 			"sats": 14,
 			"rssi(%)": 99,
-			"thr": 380
+			"thr": 380,
+			"rfmd": 2,
+			"rqly(%)": "100",
+			"fm": "STAB",
+			"tpwr(mw)": "250"
 		}
 
 		function getDisplayValue(key) {
 			let units = document.getElementById("units");
 			let osd = new OSD();
 			osd.craft_name = "CRAFT_NAME";
-			osd.display_name = "JOE PILOT";
+			osd.pilot_name = "JOE PILOT";
 			osd.units = units.options[units.selectedIndex].value;
 			let flight = { logs: [LOG_DISPLAY_EXAMPLE] };
 			let element = OSD_Elements[key];
@@ -1515,7 +1540,7 @@ https://github.com/kristjanbjarni/osd-subtitles/
 			//Init context
 			let count = 0;
 			for (let [key, ovalue] of Object.entries(OSD_Elements)) {
-				if (count == 10) {
+				if (count == (Object.entries(OSD_Elements).length / 2)) {
 					e = e2;
 				}
 				let value = osd.elements[key];
@@ -1664,10 +1689,10 @@ https://github.com/kristjanbjarni/osd-subtitles/
 						</tr>
 						<tr>
 							<td>
-								<label for="display_name">Display name:</label>
+								<label for="pilot_name">Pilot name:</label>
 							</td>
 							<td>
-								<input type="text" id="display_name" size="20" value="">
+								<input type="text" id="pilot_name" size="20" value="">
 							</td>
 						</tr>
 						<tr>
